@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel='stylesheet' href="https://cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="css/bootstrap-multiselect.css" type="text/css">
+
+</head>
+<body>
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+<script src = "https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script src = "https://code.highcharts.com/highcharts.js"></script> 
+<script src="https://code.highcharts.com/modules/exporting.js"> </script>
+<script src="https://code.highcharts.com/modules/export-data.js"></script>
+<script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="js/bootstrap-multiselect.js"></script>
+
+<form id='form'>
+    <div>
+        <select onchange="MinPecas(this.value)" multiple id="topic" multiple="multiple">
+            {% for i in columns %}
+                <option  value={{ i }}>{{ i }}</option>
+             {% endfor %}
+        </select> 
+    </div>
+    <div id='subsetttts'>
+        
+    </div>
+        <button type="submit" id='subVal'>Show Table</button>
+</form>
+<br>
+<br>
+<div id='container'>
+    <label><center> <b><u>Frequency Table</u><b> </center></label>
+        <br>
+    <table id="frequencyTable" class="display" style="width:100%">
+    <thead>
+        <tr>
+            <th>Configurations</th>
+            <th>Frequency</th>
+            <th>Frequency%</th>
+        </tr>
+    </thead>
+    <tfoot>
+        <tr>
+            <th>Configurations</th>
+            <th>Frequency</th>
+            <th>Frequency%</th>
+        </tr>
+    </tfoot>
+</table>
+
+
+</div>
+<br>
+<br>
+<div id='container1'>
+     <label><center> <b><u>Reach Table</u><b> </center></label>
+        <br>
+    <table id="reachTable" class="display" style="width:100%">
+    <thead>
+        <tr>
+            <th>Configurations</th>
+            <th>Reach</th>
+            <th>Reach%</th>
+        </tr>
+    </thead>
+    <tfoot>
+        <tr>
+            <th>Configurations</th>
+            <th>Reach</th>
+            <th>Reach%</th>
+        </tr>
+    </tfoot>
+</table>
+
+
+</div>
+
+<script>
+ss=''
+$("#subVal").hide();
+$("#container").hide();
+$("#container1").hide();
+var form=$('#form');
+
+var option=$('select#topic');
+var option1=$('select#subsetarray');
+
+
+$(document).ready( function () {
+    $('#frequencyTable').DataTable();
+    $('#topic').multiselect();
+
+} );
+
+
+
+
+
+form.submit(function(ev){
+    ev.preventDefault();
+    // selectVal=[]
+    //     $('select#topic').find(':selected').each(function() {
+    // selectVal.push($(this).text());
+    // });
+   
+   selectVal1=$('#subsetarray').val()[0];
+    
+    ajazzz(selectVal,selectVal1);
+});
+
+function ajazzz(topic,subsetsize){
+    data={'topic':topic,'subsetsize':subsetsize}
+    $.ajax({ 
+        url:'/',
+        type:'POST',
+        data:JSON.stringify(data),
+        contentType:'application/json',
+        async: true,
+        cache: false,
+        success: function (data) {
+           data= JSON.parse(data);
+            populateTable(data['frequencytable'],'frequencyTable');
+            populateTablereach(data['reachtable'],'reachTable');
+            $("#container").show();
+            $("#container1").show();
+        }
+    });
+}
+
+
+ function MinPecas(quantidade){
+    selectVal=[]
+
+     $("#subVal").show();
+    $( "#topic option:selected" ).each(function(){
+        selectVal.push($(this).text());
+
+    });
+        ss='<label>Select Subset Size</label><select multiple id="subsetarray">'
+    
+    for (let i = 1; i <= selectVal.length; i++) {
+        ss += '<option  value='+i+'>'+i+'</option>'
+    }
+    ss+='</select>'
+    $('#subsetttts').html(ss);
+
+    }   
+
+
+function populateTable(data,id){
+ $.each(data,function (index,value) { 
+        value['Configurations']=value['Configurations'].replaceAll("b'"," ").replaceAll("'"," ")
+        value['Frequency_per']=value['Frequency_per'].toFixed(2)
+    });
+    columns = []
+    keys=['Configurations','Frequency','Frequency_per']
+    $.each(keys,function (index,value) { 
+        columns.push({'data':value,'mData':value})
+    });
+    $('#'+id).DataTable({'data':data,'columns':columns,'destroy':true,order: [[1, 'desc']]})
+
+}
+
+function populateTablereach(data,id){
+ $.each(data,function (index,value) { 
+        value['Configurations']=value['Configurations'].replaceAll("b'"," ").replaceAll("'"," ")
+        value['Reach_per']=value['Reach_per'].toFixed(2);
+    });
+    columns = []
+    keys=['Configurations','Reach','Reach_per']
+    $.each(keys,function (index,value) { 
+        columns.push({'data':value,'mData':value})
+    });
+    $('#'+id).DataTable({'data':data,'columns':columns,'destroy':true,order: [[1, 'desc']]})
+}
+
+
+
+
+
+</script>
+
+
+
+</body>
+</html> 
